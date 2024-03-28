@@ -8,8 +8,7 @@ from transformers import BertTokenizer
 from dataset import ABSADataset
 from model import BertClassifier
 
-import tqdm
-
+from tqdm import tqdm
 
 
 
@@ -53,9 +52,9 @@ class Classifier:
          OF MODEL HYPERPARAMETERS
         """
 
-        train_dataset = ABSADataset(train_filename, self.tokenizer, self.max_len,device)
+        train_dataset = ABSADataset(train_filename, self.tokenizer, self.max_len)
         train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
-        dev_dataset = ABSADataset(dev_filename, self.tokenizer, self.max_len,device)
+        dev_dataset = ABSADataset(dev_filename, self.tokenizer, self.max_len)
         dev_loader = DataLoader(dev_dataset, batch_size=32, shuffle=True)
         progress_bar = tqdm(total=self.epochs, desc='Training Progress')
 
