@@ -32,10 +32,8 @@ class Classifier:
         self.tokenizer = BertTokenizer.from_pretrained(self.bert)
         self.model = BertClassifier(self.bert, dr_rate=0.3)
         self.optimizer = torch.optim.AdamW(self.model.parameters(), lr=2e-5)
-        self.criterion = torch.nn.CrossEntropyLoss()   #weight=[1503/58, 1503/390, 1503/1055]
-        self.scheduler = torch.optim.lr_scheduler.StepLR(
-            self.optimizer, step_size=1, gamma=0.1)
-        self.epochs = 10
+        # weight=[1503/58, 1503/390, 1503/1055]
+        self.criterion = torch.nn.CrossEntropyLoss()
 
     def train(self, train_filename: str, dev_filename: str, device: torch.device):
         """
@@ -58,6 +56,12 @@ class Classifier:
         val_losses = []
         train_accs = []
         val_accs = []
+        self.total_steps = len(train_loader) * self.epochs
+
+        self.scheduler = torch.optim.lr_scheduler.LinearLR(
+            self.optimizer,
+            total_iters=self.total_steps
+        )
 
         self.model = self.model.to(device)
         for _ in range(self.epochs):

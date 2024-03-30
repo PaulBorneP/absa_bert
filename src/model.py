@@ -20,6 +20,10 @@ class BertClassifier(nn.Module):
         self.classifier = nn.Linear(hidden_size, num_classes)
         if dr_rate:
             self.dropout = nn.Dropout(p=dr_rate)
+        # freeze the BERT model
+        for param in self.bert.parameters():
+            param.requires_grad = False
+
 
 
     def forward(self, x, mask):
