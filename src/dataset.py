@@ -147,6 +147,12 @@ def count_polarity(data_file: str) -> pd.DataFrame:
 
 
 if __name__ == "__main__":
+    from transformers import BertTokenizer
     data_file = "../data/traindata.csv"
-    print(f"Number of unique aspects in the dataset: {count_aspects(data_file)}")
-    print(f"Number of each polarity in the dataset:\n{count_polarity(data_file)}")
+    # print(f"Number of unique aspects in the dataset: {count_aspects(data_file)}")
+    # print(f"Number of each polarity in the dataset:\n{count_polarity(data_file)}")
+    #show the first output of the dataset
+    tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+    dataset = ABSADataset(data_file, tokenizer, max_len=128)
+    for i in range(10):
+        sample = dataset[i]

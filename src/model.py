@@ -23,6 +23,11 @@ class BertClassifier(nn.Module):
         # freeze the BERT model
         for param in self.bert.parameters():
             param.requires_grad = False
+        
+        # initialize the weights
+        nn.init.xavier_normal_(self.classifier.weight)
+        nn.init.zeros_(self.classifier.bias)
+        
 
 
 

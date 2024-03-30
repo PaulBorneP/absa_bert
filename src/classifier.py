@@ -34,6 +34,7 @@ class Classifier:
         self.optimizer = torch.optim.AdamW(self.model.parameters(), lr=2e-5)
         # weight=[1503/58, 1503/390, 1503/1055]
         self.criterion = torch.nn.CrossEntropyLoss()
+        self.epochs = 10
 
     def train(self, train_filename: str, dev_filename: str, device: torch.device):
         """
