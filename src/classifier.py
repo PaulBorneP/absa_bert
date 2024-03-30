@@ -11,7 +11,6 @@ from model import BertClassifier
 from tqdm import tqdm
 
 
-
 class Classifier:
     """
     The Classifier: complete the definition of this class template by providing a constructor (i.e. the
@@ -19,29 +18,25 @@ class Classifier:
     of these methods
      """
 
-    ############################################# complete the classifier class below
-    
+    # complete the classifier class below
+
     def __init__(self):
         """
         This should create and initilize the model. Does not take any arguments.
         """
         self.max_len = 128
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.device = torch.device(
+            'cuda' if torch.cuda.is_available() else 'cpu')
         self.bert = 'bert-base-uncased'
 
         self.tokenizer = BertTokenizer.from_pretrained(self.bert)
         self.model = BertClassifier(self.bert, dr_rate=0.1)
         self.optimizer = torch.optim.AdamW(self.model.parameters(), lr=2e-5)
         self.criterion = torch.nn.CrossEntropyLoss()
-        self.scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, step_size=1, gamma=0.1)
+        self.scheduler = torch.optim.lr_scheduler.StepLR(
+            self.optimizer, step_size=1, gamma=0.1)
         self.epochs = 10
 
-
-
-
-    
-    
-    
     def train(self, train_filename: str, dev_filename: str, device: torch.device):
         """
         Trains the classifier model on the training set stored in file trainfile
@@ -52,7 +47,8 @@ class Classifier:
          OF MODEL HYPERPARAMETERS
         """
 
-        train_dataset = ABSADataset(train_filename, self.tokenizer, self.max_len)
+        train_dataset = ABSADataset(
+            train_filename, self.tokenizer, self.max_len)
         train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
         dev_dataset = ABSADataset(dev_filename, self.tokenizer, self.max_len)
         dev_loader = DataLoader(dev_dataset, batch_size=32, shuffle=True)
@@ -62,13 +58,16 @@ class Classifier:
         val_losses = []
         train_accs = []
         val_accs = []
-        
+
+        self.model = self.model.to(device)
         for _ in range(self.epochs):
             self.model.train()
-            train_loss, train_acc = self.train_for_one_epoch(train_loader, device)
+            train_loss, train_acc = self.train_for_one_epoch(
+                train_loader, device)
             self.model.eval()
             val_loss, val_acc = self.evaluate(dev_loader, device)
-            progress_bar.set_postfix({'train_loss': train_loss, 'train_acc': train_acc, 'val_loss': val_loss, 'val_acc': val_acc})
+            progress_bar.set_postfix(
+                {'train_loss': train_loss, 'train_acc': train_acc, 'val_loss': val_loss, 'val_acc': val_acc})
             progress_bar.update(1)
             train_losses.append(train_loss)
             val_losses.append(val_loss)
@@ -78,9 +77,6 @@ class Classifier:
 
         # Save the model
         torch.save(self.model.state_dict(), 'model.pth')
-        
-
-
 
     def train_for_one_epoch(self, train_loader: DataLoader, device: torch.device):
         loss_epoch = 0
@@ -101,9 +97,7 @@ class Classifier:
             total += targets.size(0)
             correct += (predicted == targets).sum().item()
 
-        return loss_epoch,correct / total
-
-
+        return loss_epoch/total, correct / total
 
     def evaluate(self, dev_loader: DataLoader, device: torch.device):
         correct = 0
@@ -121,9 +115,7 @@ class Classifier:
                 _, predicted = torch.max(outputs.data, 1)
                 total += targets.size(0)
                 correct += (predicted == targets).sum().item()
-        return loss_epoch, correct / total
-
-
+        return loss_epoch/total, correct / total
 
     def predict(self, data_filename: str, device: torch.device) -> List[str]:
         """Predicts class labels for the input instances in file 'datafile'
@@ -135,7 +127,8 @@ class Classifier:
 
         test_dataset = ABSADataset(data_filename, self.tokenizer, self.max_len)
         test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
-        self.model.load_state_dict(torch.load('model.pth')).to(device)
+        self.model.load_state_dict(torch.load('model.pth'))
+        self.model = self.model.to(device)
         self.model.eval()
         predictions = []
         with torch.no_grad():
@@ -146,9 +139,3 @@ class Classifier:
                 _, predicted = torch.max(outputs.data, 1)
                 predictions += predicted.tolist()
         return predictions
-    
-
-
-
-
-

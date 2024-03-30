@@ -97,7 +97,6 @@ class ABSADataset(Dataset):
         text = self.df.loc[idx, 'text']
         aspect_target = self.df.loc[idx, 'aspect_target']
         label = self.df.loc[idx, 'label']
-        print(text)
 
         encoding = self.tokenizer.encode_plus(
                 text,
@@ -117,15 +116,3 @@ class ABSADataset(Dataset):
             'label': label
         }
 
-
-      
-if __name__ == "__main__":
-
-    from transformers import BertTokenizer
-    tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-    train = ABSADataset('../data/traindata.csv', tokenizer, 512)
-    for i in range(len(train)):
-        sample = train[i]
-        for key in sample:
-            if key != 'text':
-                print(key, sample[key].shape)
