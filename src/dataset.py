@@ -116,3 +116,37 @@ class ABSADataset(Dataset):
             'label': label
         }
 
+# count the number of unique aspects in the dataset
+def count_aspects(data_file: str) -> int:
+    """
+    Count the number of unique aspects in the dataset.
+
+    Args:
+        data_file (str): The path to the data file.
+
+    Returns:
+        int: The number of unique aspects.
+    """
+    df = pd.read_csv(data_file, sep='\t', header=None, names=['polarity','aspect', 'target', 'what?', 'text'],index_col=False)
+    return df['aspect'].nunique()
+
+# count the number of each polarity in the dataset
+
+def count_polarity(data_file: str) -> pd.DataFrame:
+    """
+    Count the number of each polarity in the dataset.
+
+    Args:
+        data_file (str): The path to the data file.
+
+    Returns:
+        pd.DataFrame: The count of each polarity.
+    """
+    df = pd.read_csv(data_file, sep='\t', header=None, names=['polarity','aspect', 'target', 'what?', 'text'],index_col=False)
+    return df['polarity'].value_counts()
+
+
+if __name__ == "__main__":
+    data_file = "../data/traindata.csv"
+    print(f"Number of unique aspects in the dataset: {count_aspects(data_file)}")
+    print(f"Number of each polarity in the dataset:\n{count_polarity(data_file)}")
