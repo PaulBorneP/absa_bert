@@ -69,7 +69,7 @@ class ABSADataset(Dataset):
         return question
 
     ################ CHANGE THE ASPECT QUESTIONS #####################
-    def __init__(self, data_file: str, tokenizer: PreTrainedTokenizer, max_len: int) -> None:
+    def __init__(self, data_file: str, tokenizer: PreTrainedTokenizer) -> None:
         """
         Initialize the Dataset class.
 
@@ -86,7 +86,7 @@ class ABSADataset(Dataset):
         self.df['question'] = self.df['aspect'].apply(self.aspect_questions)
         self.df['aspect_target'] = self.df['question'] + self.df['target']
         self.tokenizer = tokenizer
-        self.max_len = max_len
+        self.max_len = sequence_length(self.df, tokenizer) 
 
 
     def __len__(self):
@@ -144,6 +144,15 @@ def count_polarity(data_file: str) -> pd.DataFrame:
     """
     df = pd.read_csv(data_file, sep='\t', header=None, names=['polarity','aspect', 'target', 'what?', 'text'],index_col=False)
     return df['polarity'].value_counts()
+
+
+def sequence_length(df, tokenizer):
+    token_lengths = []
+    for sentence in df['text']:
+        tokens = tokenizer.encode(sentence, max_length=1000)
+        token_lengths.append(len(tokens))
+    # Add 30 to the max in case there are longer sequences in the dev or test files
+    return max(token_lengths) + 30 
 
 
 if __name__ == "__main__":

@@ -5,7 +5,7 @@ from torch.utils.data import DataLoader
 from transformers import BertTokenizer
 
 
-from dataset import ABSADataset
+from dataset import ABSADataset, sequence_length
 from model import BertClassifier
 
 from tqdm import tqdm
@@ -24,7 +24,6 @@ class Classifier:
         """
         This should create and initilize the model. Does not take any arguments.
         """
-        self.max_len = 128
         self.device = torch.device(
             'cuda' if torch.cuda.is_available() else 'cpu')
         self.bert = 'bert-base-uncased'
@@ -45,13 +44,13 @@ class Classifier:
           - DO NOT USE THE DEV DATA AS TRAINING EXAMPLES, YOU CAN USE THEM ONLY FOR THE OPTIMIZATION
          OF MODEL HYPERPARAMETERS
         """
-
         train_dataset = ABSADataset(
-            train_filename, self.tokenizer, self.max_len)
+            train_filename, self.tokenizer)
         train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
-        dev_dataset = ABSADataset(dev_filename, self.tokenizer, self.max_len)
+        dev_dataset = ABSADataset(dev_filename, self.tokenizer)
         dev_loader = DataLoader(dev_dataset, batch_size=32, shuffle=True)
         progress_bar = tqdm(total=self.epochs, desc='Training Progress')
+
 
         train_losses = []
         val_losses = []
