@@ -99,22 +99,31 @@ class ABSADataset(Dataset):
         label = self.df.loc[idx, 'label']
 
         encoding = self.tokenizer.encode_plus(
-                text,
-                aspect_target,
-                add_special_tokens=True,
-                max_length=self.max_len,
-                padding='max_length',
-                return_token_type_ids=False,
-                return_attention_mask=True,
-                return_tensors='pt',
-                truncation=True)
-
+            text,
+            aspect_target,
+            add_special_tokens=True, # Add '[CLS]' and '[SEP]'
+            max_length=self.max_len_token,
+            return_token_type_ids=False,
+            pad_to_max_length=True,
+            return_attention_mask=True,
+            return_tensors='pt', 
+            truncation=True)
         return {
             'text': text,
             'input_ids': encoding['input_ids'].flatten(),
             'attention_mask': encoding['attention_mask'].flatten(),
             'label': label
         }
+
+
+
+def sequence_length(df, tokenizer):
+    token_lengths = []
+    for sentence in df['text']:
+        tokens = tokenizer.encode(sentence, max_length=1000)
+        token_lengths.append(len(tokens))
+    # Add 30 to the max in case there are longer sequences in the dev or test files
+    return max(token_lengths) + 30 
 
 # count the number of unique aspects in the dataset
 def count_aspects(data_file: str) -> int:
@@ -146,13 +155,7 @@ def count_polarity(data_file: str) -> pd.DataFrame:
     return df['polarity'].value_counts()
 
 
-def sequence_length(df, tokenizer):
-    token_lengths = []
-    for sentence in df['text']:
-        tokens = tokenizer.encode(sentence, max_length=1000)
-        token_lengths.append(len(tokens))
-    # Add 30 to the max in case there are longer sequences in the dev or test files
-    return max(token_lengths) + 30 
+
 
 
 if __name__ == "__main__":

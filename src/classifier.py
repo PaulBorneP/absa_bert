@@ -51,7 +51,6 @@ class Classifier:
         dev_loader = DataLoader(dev_dataset, batch_size=32, shuffle=True)
         progress_bar = tqdm(total=self.epochs, desc='Training Progress')
 
-
         train_losses = []
         val_losses = []
         train_accs = []
@@ -129,7 +128,7 @@ class Classifier:
           - PUT THE MODEL and DATA on the specified device! Do not use another device
         """
         label_dict = {0: 'negative', 1: 'neutral', 2: 'positive'}
-        test_dataset = ABSADataset(data_filename, self.tokenizer, self.max_len)
+        test_dataset = ABSADataset(data_filename, self.tokenizer)
         test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
         self.model.load_state_dict(torch.load('model.pth'))
         self.model = self.model.to(device)
