@@ -5,7 +5,7 @@ from torch.utils.data import DataLoader
 from transformers import BertTokenizer
 
 
-from dataset import ABSADataset, sequence_length
+from dataset import ABSADataset
 from model import BertClassifier
 
 from tqdm import tqdm
@@ -118,7 +118,7 @@ class Classifier:
                 _, predicted = torch.max(outputs.data, 1)
                 total += targets.size(0)
                 correct += (predicted == targets).sum().item()
-        return loss_epoch/total, correct / total
+        return loss_epoch/total, correct/total
 
     def predict(self, data_filename: str, device: torch.device) -> List[str]:
         """Predicts class labels for the input instances in file 'datafile'

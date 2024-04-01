@@ -8,7 +8,6 @@ class ABSADataset(Dataset):
     from typing import Any
     from transformers import PreTrainedTokenizer
 
-        
     @staticmethod
     def polarity_to_label(polarity: str) -> int:
         """
@@ -25,17 +24,19 @@ class ABSADataset(Dataset):
             return 0
         else:
             raise ValueError('Polarity not found')
-            
-        
+
+
 ################ CHANGE THE ASPECT QUESTIONS #####################
 
 #### maybe ask gpt to generate different questions  and try the results ####
+
+
     @staticmethod
     def aspect_questions(aspect: str) -> str:
         """
         Return the question for the aspect.
         """
-    
+
         if aspect == 'AMBIENCE#GENERAL':
             question = "What do you think of the ambience ? "
 
@@ -60,7 +61,7 @@ class ABSADataset(Dataset):
         elif aspect == 'DRINKS#STYLE_OPTIONS':
             question = "What do you think of the drink choices ? "
 
-        elif aspect == 'RESTAURANT#PRICES' or aspect =='DRINKS#PRICES' or aspect == 'FOOD#PRICES':
+        elif aspect == 'RESTAURANT#PRICES' or aspect == 'DRINKS#PRICES' or aspect == 'FOOD#PRICES':
             question = 'What do you think of the price of it ? '
 
         else:
@@ -81,17 +82,16 @@ class ABSADataset(Dataset):
         Returns:
             None
         """
-        self.df = pd.read_csv(data_file, sep='\t', header=None, names=['polarity','aspect', 'target', 'what?', 'text'],index_col=False)
+        self.df = pd.read_csv(data_file, sep='\t', header=None, names=[
+                              'polarity', 'aspect', 'target', 'what?', 'text'], index_col=False)
         self.df['label'] = self.df['polarity'].apply(self.polarity_to_label)
         self.df['question'] = self.df['aspect'].apply(self.aspect_questions)
         self.df['aspect_target'] = self.df['question'] + self.df['target']
         self.tokenizer = tokenizer
-        self.max_len = sequence_length(self.df, tokenizer) 
-
+        self.max_len = sequence_length(self.df, tokenizer)
 
     def __len__(self):
         return len(self.df)
-
 
     def __getitem__(self, idx):
         text = self.df.loc[idx, 'text']
@@ -101,12 +101,12 @@ class ABSADataset(Dataset):
         encoding = self.tokenizer.encode_plus(
             text,
             aspect_target,
-            add_special_tokens=True, # Add '[CLS]' and '[SEP]'
-            max_length=self.max_len_token,
+            add_special_tokens=True,  # Add '[CLS]' and '[SEP]'
+            max_length=self.max_len,
             return_token_type_ids=False,
             pad_to_max_length=True,
             return_attention_mask=True,
-            return_tensors='pt', 
+            return_tensors='pt',
             truncation=True)
         return {
             'text': text,
@@ -116,16 +116,17 @@ class ABSADataset(Dataset):
         }
 
 
-
 def sequence_length(df, tokenizer):
     token_lengths = []
     for sentence in df['text']:
         tokens = tokenizer.encode(sentence, max_length=1000)
         token_lengths.append(len(tokens))
     # Add 30 to the max in case there are longer sequences in the dev or test files
-    return max(token_lengths) + 30 
+    return max(token_lengths) + 30
 
 # count the number of unique aspects in the dataset
+
+
 def count_aspects(data_file: str) -> int:
     """
     Count the number of unique aspects in the dataset.
@@ -136,10 +137,12 @@ def count_aspects(data_file: str) -> int:
     Returns:
         int: The number of unique aspects.
     """
-    df = pd.read_csv(data_file, sep='\t', header=None, names=['polarity','aspect', 'target', 'what?', 'text'],index_col=False)
+    df = pd.read_csv(data_file, sep='\t', header=None, names=[
+                     'polarity', 'aspect', 'target', 'what?', 'text'], index_col=False)
     return df['aspect'].nunique()
 
 # count the number of each polarity in the dataset
+
 
 def count_polarity(data_file: str) -> pd.DataFrame:
     """
@@ -151,11 +154,10 @@ def count_polarity(data_file: str) -> pd.DataFrame:
     Returns:
         pd.DataFrame: The count of each polarity.
     """
-    df = pd.read_csv(data_file, sep='\t', header=None, names=['polarity','aspect', 'target', 'what?', 'text'],index_col=False)
+    df = pd.read_csv(data_file, sep='\t', header=None, names=[
+                     'polarity', 'aspect', 'target', 'what?', 'text'], index_col=False)
+
     return df['polarity'].value_counts()
-
-
-
 
 
 if __name__ == "__main__":
@@ -163,8 +165,8 @@ if __name__ == "__main__":
     data_file = "../data/traindata.csv"
     # print(f"Number of unique aspects in the dataset: {count_aspects(data_file)}")
     # print(f"Number of each polarity in the dataset:\n{count_polarity(data_file)}")
-    #show the first output of the dataset
+    # show the first output of the dataset
     tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-    dataset = ABSADataset(data_file, tokenizer, max_len=128)
+    dataset = ABSADataset(data_file, tokenizer)
     for i in range(10):
         sample = dataset[i]
