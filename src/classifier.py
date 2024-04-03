@@ -2,11 +2,12 @@ from typing import List
 
 import torch
 from torch.utils.data import DataLoader
-from transformers import BertTokenizer
+from transformers import BertTokenizer, AutoModelForSequenceClassification, AutoTokenizer
 
 
 from dataset import ABSADataset
-from model import BertClassifier
+from model import BertClassifier, LoRA
+
 
 from tqdm import tqdm
 
@@ -28,9 +29,26 @@ class Classifier:
             'cuda' if torch.cuda.is_available() else 'cpu')
         self.bert = 'bert-base-uncased'
 
-        self.tokenizer = BertTokenizer.from_pretrained(self.bert)
-        self.model = BertClassifier(self.bert, dr_rate=0.3)
-        self.optimizer = torch.optim.AdamW(self.model.parameters(), lr=2e-5)
+        # self.tokenizer = BertTokenizer.from_pretrained(self.bert)
+        # self.model = BertClassifier(self.bert, dr_rate=0.3)
+        self.tokenizer = AutoTokenizer.from_pretrained("distilbert-base-uncased")
+
+        self.model = AutoModelForSequenceClassification.from_pretrained("distilbert-base-uncased", num_labels=3)
+        for i in range(len(self.model.distilbert.transformer.layer)):
+            self.model.distilbert.transformer.layer[i].attention.q_lin = LoRA(self.model.distilbert.transformer.layer[i].attention.q_lin)
+            self.model.distilbert.transformer.layer[i].attention.v_lin = LoRA(self.model.distilbert.transformer.layer[i].attention.v_lin)
+
+        # Freeze all the pretrained weights
+        # Frozen weights won't have their gradients computed during loss.backward()
+        # Yet, the optimizer might still want to update them even with no available gradient
+        # That's why we give only the non frozen weights to the optimizer next
+        learned_params = []
+        for name, param in self.model.named_parameters():
+            if 'adapter' in name or 'classifier' in name:
+                learned_params.append(param)
+            else:
+                param.requires_grad = False
+        self.optimizer = torch.optim.AdamW(self.model.parameters(), lr=5e-5)
         # weight=[1503/58, 1503/390, 1503/1055]
         self.criterion = torch.nn.CrossEntropyLoss()
         self.epochs = 10
@@ -89,13 +107,12 @@ class Classifier:
             mask = data['attention_mask'].to(device)
             targets = data['label'].to(device)
             self.optimizer.zero_grad()
-            outputs = self.model(ids, mask)
-            loss = self.criterion(outputs, targets)
-            loss.backward()
+            outputs = self.model(ids, attention_mask=mask, labels=targets)
+            loss = outputs.loss
             loss_epoch += loss.item()
             self.optimizer.step()
             self.scheduler.step()
-            _, predicted = torch.max(outputs.data, 1)
+            _, predicted = torch.max(outputs.logits, 1)
             total += targets.size(0)
             correct += (predicted == targets).sum().item()
 
@@ -111,11 +128,10 @@ class Classifier:
                 ids = data['input_ids'].to(device)
                 mask = data['attention_mask'].to(device)
                 targets = data['label'].to(device)
-                outputs = self.model(ids, mask)
-                loss = self.criterion(outputs, targets)
+                outputs = self.model(ids, attention_mask=mask, labels=targets)
+                loss = outputs.loss
                 loss_epoch += loss.item()
-                outputs = self.model(ids, mask)
-                _, predicted = torch.max(outputs.data, 1)
+                _, predicted = torch.max(outputs.logits, 1)
                 total += targets.size(0)
                 correct += (predicted == targets).sum().item()
         return loss_epoch/total, correct/total
@@ -138,7 +154,7 @@ class Classifier:
             for i, data in enumerate(test_loader):
                 ids = data['input_ids'].to(device)
                 mask = data['attention_mask'].to(device)
-                outputs = self.model(ids, mask)
-                _, predicted = torch.max(outputs.data, 1)
+                outputs = self.model(ids, attention_mask=mask)
+                _, predicted = torch.max(outputs.logits, 1)
                 predictions.extend([label_dict[p.item()] for p in predicted])
         return predictions
