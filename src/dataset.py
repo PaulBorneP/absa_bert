@@ -104,7 +104,7 @@ class ABSADataset(Dataset):
             add_special_tokens=True,  # Add '[CLS]' and '[SEP]'
             max_length=self.max_len,
             return_token_type_ids=False,
-            pad_to_max_length=True,
+            padding='max_length',
             return_attention_mask=True,
             return_tensors='pt',
             truncation=True)

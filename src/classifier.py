@@ -54,7 +54,7 @@ class Classifier:
                 param.requires_grad = False
         self.optimizer = torch.optim.AdamW(learned_params, lr=5e-5)
         # weight=[1503/58, 1503/390, 1503/1055]
-        self.criterion = torch.nn.CrossEntropyLoss()
+        # self.criterion = torch.nn.CrossEntropyLoss()
         self.epochs = 10
 
     def train(self, train_filename: str, dev_filename: str, device: torch.device):
@@ -68,9 +68,9 @@ class Classifier:
         """
         train_dataset = ABSADataset(
             train_filename, self.tokenizer)
-        train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
+        train_loader = DataLoader(train_dataset, batch_size=8, shuffle=True)
         dev_dataset = ABSADataset(dev_filename, self.tokenizer)
-        dev_loader = DataLoader(dev_dataset, batch_size=32, shuffle=True)
+        dev_loader = DataLoader(dev_dataset, batch_size=8, shuffle=True)
         progress_bar = tqdm(total=self.epochs, desc='Training Progress')
 
         train_losses = []
