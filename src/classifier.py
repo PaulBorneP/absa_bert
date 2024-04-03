@@ -31,12 +31,16 @@ class Classifier:
 
         # self.tokenizer = BertTokenizer.from_pretrained(self.bert)
         # self.model = BertClassifier(self.bert, dr_rate=0.3)
-        self.tokenizer = AutoTokenizer.from_pretrained("distilbert-base-uncased")
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            "distilbert-base-uncased")
 
-        self.model = AutoModelForSequenceClassification.from_pretrained("distilbert-base-uncased", num_labels=3)
+        self.model = AutoModelForSequenceClassification.from_pretrained(
+            "distilbert-base-uncased", num_labels=3)
         for i in range(len(self.model.distilbert.transformer.layer)):
-            self.model.distilbert.transformer.layer[i].attention.q_lin = LoRA(self.model.distilbert.transformer.layer[i].attention.q_lin)
-            self.model.distilbert.transformer.layer[i].attention.v_lin = LoRA(self.model.distilbert.transformer.layer[i].attention.v_lin)
+            self.model.distilbert.transformer.layer[i].attention.q_lin = LoRA(
+                self.model.distilbert.transformer.layer[i].attention.q_lin)
+            self.model.distilbert.transformer.layer[i].attention.v_lin = LoRA(
+                self.model.distilbert.transformer.layer[i].attention.v_lin)
 
         # Freeze all the pretrained weights
         # Frozen weights won't have their gradients computed during loss.backward()
@@ -48,7 +52,7 @@ class Classifier:
                 learned_params.append(param)
             else:
                 param.requires_grad = False
-        self.optimizer = torch.optim.AdamW(self.model.parameters(), lr=5e-5)
+        self.optimizer = torch.optim.AdamW(learned_params, lr=5e-5)
         # weight=[1503/58, 1503/390, 1503/1055]
         self.criterion = torch.nn.CrossEntropyLoss()
         self.epochs = 10
