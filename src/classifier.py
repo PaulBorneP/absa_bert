@@ -9,7 +9,9 @@ from dataset import ABSADataset
 from model import BertClassifier
 
 from tqdm import tqdm
-
+import torch.nn as nn
+import torch.nn.functional as F
+import numpy as np
 
 class Classifier:
     """
@@ -29,10 +31,7 @@ class Classifier:
         self.bert = 'bert-base-uncased'
 
         self.tokenizer = BertTokenizer.from_pretrained(self.bert)
-        self.model = BertClassifier(self.bert, dr_rate=0.3)
-        self.optimizer = torch.optim.AdamW(self.model.parameters(), lr=2e-5)
-        # weight=[1503/58, 1503/390, 1503/1055]
-        self.criterion = torch.nn.CrossEntropyLoss()
+        self.criterion = torch.nn.CrossEntropyLoss().to(self.device)
         self.epochs = 10
 
     def train(self, train_filename: str, dev_filename: str, device: torch.device):
@@ -50,11 +49,17 @@ class Classifier:
         dev_dataset = ABSADataset(dev_filename, self.tokenizer)
         dev_loader = DataLoader(dev_dataset, batch_size=32, shuffle=True)
         progress_bar = tqdm(total=self.epochs, desc='Training Progress')
+        
+        num_classes = train_dataset.df['label'].unique().shape[0]
+        self.model = BertClassifier(self.bert, dr_rate=0.3, num_classes=num_classes)
+        self.optimizer = torch.optim.AdamW(self.model.parameters(), lr=2e-5)
+        
 
         train_losses = []
         val_losses = []
         train_accs = []
         val_accs = []
+        best_val_acc = 0
         self.total_steps = len(train_loader) * self.epochs
 
         self.scheduler = torch.optim.lr_scheduler.LinearLR(
@@ -74,50 +79,64 @@ class Classifier:
             val_losses.append(val_loss)
             train_accs.append(train_acc)
             val_accs.append(val_acc)
+            # Save the best  model
+            if val_acc > best_val_acc:
+                best_val_acc = val_acc
+                torch.save(self.model.state_dict(), 'model.pth')
+                
         progress_bar.close()
 
-        # Save the model
-        torch.save(self.model.state_dict(), 'model.pth')
+        
 
     def train_for_one_epoch(self, train_loader: DataLoader, device: torch.device):
         loss_epoch = 0
-        total = 0
         correct = 0
+        total = 0
         self.model.train()
         for i, data in enumerate(train_loader):
+            self.optimizer.zero_grad()
+            
             ids = data['input_ids'].to(device)
             mask = data['attention_mask'].to(device)
             targets = data['label'].to(device)
-            self.optimizer.zero_grad()
+        
             outputs = self.model(ids, mask)
             loss = self.criterion(outputs, targets)
             loss.backward()
-            loss_epoch += loss.item()
+            
+            
             self.optimizer.step()
             self.scheduler.step()
-            _, predicted = torch.max(outputs.data, 1)
+            
+            loss_epoch+=loss.item()
             total += targets.size(0)
-            correct += (predicted == targets).sum().item()
+            
+            _, predicted = torch.max(outputs, 1)
+            correct += torch.sum(predicted == targets).item()
+            
 
-        return loss_epoch/total, correct / total
+        return loss_epoch/total, correct/total
 
     def evaluate(self, dev_loader: DataLoader, device: torch.device):
         correct = 0
         total = 0
         loss_epoch = 0
+
         self.model.eval()
         with torch.no_grad():
             for i, data in enumerate(dev_loader):
+                
                 ids = data['input_ids'].to(device)
                 mask = data['attention_mask'].to(device)
                 targets = data['label'].to(device)
                 outputs = self.model(ids, mask)
                 loss = self.criterion(outputs, targets)
                 loss_epoch += loss.item()
-                outputs = self.model(ids, mask)
-                _, predicted = torch.max(outputs.data, 1)
+                
+                _, predicted = torch.max(outputs, 1)
+                
                 total += targets.size(0)
-                correct += (predicted == targets).sum().item()
+                correct += torch.sum(predicted == targets).item()
         return loss_epoch/total, correct/total
 
     def predict(self, data_filename: str, device: torch.device) -> List[str]:
@@ -130,7 +149,7 @@ class Classifier:
         label_dict = {0: 'negative', 1: 'neutral', 2: 'positive'}
         test_dataset = ABSADataset(data_filename, self.tokenizer)
         test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
-        self.model.load_state_dict(torch.load('model.pth'))
+        self.model.load_state_dict(torch.load('model.pth', map_location=device))
         self.model = self.model.to(device)
         self.model.eval()
         predictions = []
@@ -139,6 +158,9 @@ class Classifier:
                 ids = data['input_ids'].to(device)
                 mask = data['attention_mask'].to(device)
                 outputs = self.model(ids, mask)
-                _, predicted = torch.max(outputs.data, 1)
+                
+                logits = F.softmax(outputs, dim=1)
+                logits = logits.detach().cpu().numpy()
+                predicted = np.argmax(logits, axis=1)
                 predictions.extend([label_dict[p.item()] for p in predicted])
-        return predictions
+        return np.array(predictions)

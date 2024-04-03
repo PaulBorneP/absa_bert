@@ -21,13 +21,7 @@ class BertClassifier(nn.Module):
         self.classifier = nn.Linear(self.bert.config.hidden_size, num_classes)
         if dr_rate:
             self.dropout = nn.Dropout(p=dr_rate)
-        # freeze the BERT model
-        for param in self.bert.parameters():
-            param.requires_grad = False
 
-        # initialize the weights
-        nn.init.xavier_normal_(self.classifier.weight)
-        nn.init.zeros_(self.classifier.bias)
 
     def forward(self, x, mask):
         """

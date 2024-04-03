@@ -26,50 +26,43 @@ class ABSADataset(Dataset):
             raise ValueError('Polarity not found')
 
 
-################ CHANGE THE ASPECT QUESTIONS #####################
-
-#### maybe ask gpt to generate different questions  and try the results ####
-
-
     @staticmethod
     def aspect_questions(aspect: str) -> str:
         """
         Return the question for the aspect.
         """
-
         if aspect == 'AMBIENCE#GENERAL':
-            question = "What do you think of the ambience ? "
+            question = "How would you describe the atmosphere?"
 
         elif aspect == 'FOOD#QUALITY':
-            question = "What do you think of the quality of the food ? "
+            question = "How do you feel about the food quality?"
 
         elif aspect == 'SERVICE#GENERAL':
-            question = "What do you think of the service ? "
+            question = "What do you think of the service ?"
 
         elif aspect == 'FOOD#STYLE_OPTIONS':
-            question = "What do you think of the food choices ? "
+            question = "How do you feel about the variety of food options?"
 
         elif aspect == 'DRINKS#QUALITY':
-            question = "What do you think of the drinks? "
+            question = "How would you assess the quality of the drinks?"
 
         elif aspect == 'RESTAURANT#MISCELLANEOUS' or aspect == 'RESTAURANT#GENERAL':
-            question = "What do you think of the restaurant ? "
+            question = "What are your overall thoughts on the restaurant?"
 
         elif aspect == 'LOCATION#GENERAL':
-            question = 'What do you think of the location ? '
+            question = "How do you feel about the restaurant's location?"
 
         elif aspect == 'DRINKS#STYLE_OPTIONS':
             question = "What do you think of the drink choices ? "
 
         elif aspect == 'RESTAURANT#PRICES' or aspect == 'DRINKS#PRICES' or aspect == 'FOOD#PRICES':
-            question = 'What do you think of the price of it ? '
+            question = "How do you feel about the pricing?"
 
         else:
             raise ValueError('Aspect not found')
 
         return question
 
-    ################ CHANGE THE ASPECT QUESTIONS #####################
     def __init__(self, data_file: str, tokenizer: PreTrainedTokenizer) -> None:
         """
         Initialize the Dataset class.
@@ -86,7 +79,7 @@ class ABSADataset(Dataset):
                               'polarity', 'aspect', 'target', 'what?', 'text'], index_col=False)
         self.df['label'] = self.df['polarity'].apply(self.polarity_to_label)
         self.df['question'] = self.df['aspect'].apply(self.aspect_questions)
-        self.df['aspect_target'] = self.df['question'] + self.df['target']
+        self.df['aspect_target'] = self.df['question'] +  ' ' + self.df['target']
         self.tokenizer = tokenizer
         self.max_len = sequence_length(self.df, tokenizer)
 
@@ -104,7 +97,7 @@ class ABSADataset(Dataset):
             add_special_tokens=True,  # Add '[CLS]' and '[SEP]'
             max_length=self.max_len,
             return_token_type_ids=False,
-            pad_to_max_length=True,
+            padding= "max_length",
             return_attention_mask=True,
             return_tensors='pt',
             truncation=True)
@@ -162,7 +155,7 @@ def count_polarity(data_file: str) -> pd.DataFrame:
 
 if __name__ == "__main__":
     from transformers import BertTokenizer
-    data_file = "../data/traindata.csv"
+    data_file = "data/traindata.csv"
     # print(f"Number of unique aspects in the dataset: {count_aspects(data_file)}")
     # print(f"Number of each polarity in the dataset:\n{count_polarity(data_file)}")
     # show the first output of the dataset
