@@ -1,0 +1,15 @@
+torch==2.1
+transformers==4.34.1
+tokenizers==0.14.1
+datasets==2.14.5
+scikit-learn==1.2.1
+numpy==1.26.0
+pandas==2.1.1
+
+# Additional requirements
+spacy==3.7.4
+inflect==7.2.0
+pyspellchecker==0.8.1
+keras==3.1.1
+tensorflow==2.16.1
+en-core-web-sm==3.7.1

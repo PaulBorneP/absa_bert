@@ -14,7 +14,7 @@ class Word2Vec:
         self.word2id = {w: i for i, w in enumerate(self.word2vec.keys())}
         self.id2word = {v: k for k, v in self.word2id.items()}
         self.embeddings = np.array(list(self.word2vec.values()))
-        self.parser = spacy.load("en_core_web_trf")
+        self.parser = spacy.load("en_core_web_sm")
         self.dimension = -1
         self.unknown_token = np.random.rand(300)
 

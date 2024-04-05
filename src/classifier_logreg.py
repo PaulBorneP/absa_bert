@@ -16,7 +16,7 @@ class Classifier:
         self.columns = ['Polarity', 'Aspect_Category', 'Specific_Target_Aspect_Term', 'Character_Offset', 'Sentence']
         self.polarity_encoder = LabelEncoder()
         self.category_encoder = LabelEncoder()
-        self.w2v = Word2Vec('../resources/crawl-300d-200k.vec', 150000)
+        self.w2v = Word2Vec('../resources/crawl-300d-2M.vec', 150000)
         self.logreg = LogisticRegression(C=1, solver='liblinear', multi_class='ovr') 
 
 
