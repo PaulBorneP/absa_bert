@@ -51,7 +51,9 @@ Model performance is evaluated using accuracy metrics calculated based on the pr
 labels compared to the ground truth labels. The implementation provides methods for
 calculating accuracy on both the development set and, if available, the test set.
 
-Accuracy on the dev set:
+------------------------------
+Accuracy on the dev set: 30.32
+------------------------------
 
 ---------------------------------------------------------------------------------------
 
@@ -84,4 +86,6 @@ keras==3.1.1
 tensorflow==2.16.1
 en-core-web-sm==3.7.1
 
-Accuracy on the dev set: 
+------------------------------
+Accuracy on the dev set: 80.85
+------------------------------
